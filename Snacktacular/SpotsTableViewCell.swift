@@ -16,17 +16,18 @@ class SpotsTableViewCell: UITableViewCell {
     @IBOutlet weak var ratingLabel: UILabel!
     
     var currentLocation: CLLocation!
-    var spot: Spot!
-    
-    func configureCell(spot: Spot) {
-        nameLabel.text = spot.name
-        // calculate distance here
-        guard let currentLocation = currentLocation else {
-            return
+    var spot: Spot! {
+        didSet {
+            nameLabel.text = spot.name
             
+            // calculate distance here
+            guard let currentLocation = currentLocation else {
+                return
+            }
+            let distanceInMeters = currentLocation.distance(from: spot.location)
+            let distanceString = "Distance: \( (distanceInMeters * 0.00062137).roundTo(places: 2) ) miles"
+            distanceLabel.text = distanceString
+            ratingLabel.text = "Avg. Rating: \(spot.averageRating.roundTo(places: 1))"
         }
-        let distanceInMeters = currentLocation.distance(from: spot.location)
-        let distanceString = "Distance: \((distanceInMeters * 0.000062137).roundTo(places: 2)) miles"
-        distanceLabel.text = distanceString
     }
 }

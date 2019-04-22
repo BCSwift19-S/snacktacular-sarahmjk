@@ -19,9 +19,11 @@ class Spot: NSObject, MKAnnotation {
     var numberOfReviews: Int
     var postingUserID: String
     var documentID: String
+    
     var longitude: CLLocationDegrees {
         return coordinate.longitude
     }
+    
     var latitude: CLLocationDegrees {
         return coordinate.latitude
     }
@@ -39,7 +41,7 @@ class Spot: NSObject, MKAnnotation {
     }
     
     var dictionary: [String: Any] {
-        return["name":name, "address":address, "longitude": longitude, "latitude": latitude, "averageRating": averageRating, "numberOfReviews": numberOfReviews, "postingUserID":postingUserID]
+        return ["name": name, "address": address, "longitude": longitude, "latitude": latitude, "averageRating": averageRating, "numberOfReviews": numberOfReviews, "postingUserID": postingUserID]
     }
     
     init(name: String, address: String, coordinate: CLLocationCoordinate2D, averageRating: Double, numberOfReviews: Int, postingUserID: String, documentID: String) {
@@ -52,7 +54,7 @@ class Spot: NSObject, MKAnnotation {
         self.documentID = documentID
     }
     
-    override convenience init() {
+    convenience override init() {
         self.init(name: "", address: "", coordinate: CLLocationCoordinate2D(), averageRating: 0.0, numberOfReviews: 0, postingUserID: "", documentID: "")
     }
     
@@ -76,8 +78,10 @@ class Spot: NSObject, MKAnnotation {
             return completed(false)
         }
         self.postingUserID = postingUserID
+        
         // Create the dictionary representing the data we want to save
         let dataToSave = self.dictionary
+        
         // if we HAVE saved a record, we'll have a documentID
         if self.documentID != "" {
             let ref = db.collection("spots").document(self.documentID)
@@ -94,13 +98,42 @@ class Spot: NSObject, MKAnnotation {
             var ref: DocumentReference? = nil // Let firestore create the new documentID
             ref = db.collection("spots").addDocument(data: dataToSave) { error in
                 if let error = error {
-                    print("****** ERROR: creating new document \(error.localizedDescription)")
+                    print("*** ERROR: creating new document \(error.localizedDescription)")
                     completed(false)
                 } else {
                     print("^^^ new document created with ref ID \(ref?.documentID ?? "unknown")")
                     self.documentID = ref!.documentID
                     completed(true)
                 }
+            }
+        }
+    }
+    
+    func updateAverageRating(completed: @escaping ()->()) {
+        let db = Firestore.firestore()
+        let reviewsRef = db.collection("spots").document(self.documentID).collection("reviews")
+        reviewsRef.getDocuments { (querySnapshot, error) in
+            guard error == nil else {
+                print("*** ERROR: failed to get query snapshot of reviews for reviewsRef: \(reviewsRef.path), error: \(error!.localizedDescription)")
+                return completed()
+            }
+            var ratingTotal = 0.0
+            for document in querySnapshot!.documents { // go through all of the reviews documents
+                let reviewDictionary = document.data()
+                let rating = reviewDictionary["rating"] as! Int? ?? 0
+                ratingTotal = ratingTotal + Double(rating)
+            }
+            self.averageRating = ratingTotal / Double(querySnapshot!.count)
+            self.numberOfReviews = querySnapshot!.count
+            let dataToSave = self.dictionary
+            let spotRef = db.collection("spots").document(self.documentID)
+            spotRef.setData(dataToSave) { error in // save it & check errors
+                guard error == nil else {
+                    print("*** ERROR: updating document \(self.documentID) in spot after changing averageReview & numberOfReviews, error: \(error!.localizedDescription)")
+                    return completed()
+                }
+                print("^^^ Document updated with ref ID \(self.documentID)")
+                completed()
             }
         }
     }

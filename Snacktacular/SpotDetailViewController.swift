@@ -32,38 +32,41 @@ class SpotDetailViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //hide keyboard if we tap outside of a field
+        // hide keyboard if we tap outside of a field
         let tap = UITapGestureRecognizer(target: self.view, action: #selector(UIView.endEditing(_:)))
         tap.cancelsTouchesInView = false
         self.view.addGestureRecognizer(tap)
         
+        // mapView.delegate = self
         tableView.delegate = self
         tableView.dataSource = self
         collectionView.delegate = self
         collectionView.dataSource = self
         imagePicker.delegate = self
         
-        
-        //        mapView.delegate = self
-        
-        if spot == nil {
+        if spot == nil { // We are adding a new record, fields should be editable
             spot = Spot()
             getLocation()
+            
+            // editable fields should have a border around them
             nameField.addBorder(width: 0.5, radius: 5.0, color: .black)
             addressField.addBorder(width: 0.5, radius: 5.0, color: .black)
-        } else {
+        } else { // Viewing an existing spot, so editing should be disabled
+            // disable text editing
             nameField.isEnabled = false
             addressField.isEnabled = false
-            nameField.backgroundColor = UIColor.white
+            nameField.backgroundColor = UIColor.clear
             addressField.backgroundColor = UIColor.white
+            // "Save" and "Cancel" buttons should be hidden
             saveButton.title = ""
             cancelButton.title = ""
+            // Hide Toolbar so that "Lookup Place" isn't available
             navigationController?.setToolbarHidden(true, animated: true)
         }
-        
         reviews = Reviews()
         photos = Photos()
         
+        // code to create a region centered at spot's .coordinate, and zoomed in with map spanning roughly 750meters x 750meters
         let region = MKCoordinateRegion(center: spot.coordinate, latitudinalMeters: regionDistance, longitudinalMeters: regionDistance)
         mapView.setRegion(region, animated: true)
         updateUserInterface()
@@ -73,9 +76,17 @@ class SpotDetailViewController: UIViewController {
         super.viewWillAppear(animated)
         reviews.loadData(spot: spot) {
             self.tableView.reloadData()
+            if self.reviews.reviewArray.count > 0 {
+                let average = Double(self.reviews.reviewArray.reduce(0, {$0 + $1.rating})) / Double(self.reviews.reviewArray.count)
+                self.averageRatingLabel.text = "\(average.roundTo(places: 1))"
+            } else {
+                self.averageRatingLabel.text = "-.-"
+            }
         }
         
-        
+        photos.loadData(spot: spot) {
+            self.collectionView.reloadData()
+        }
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -89,14 +100,44 @@ class SpotDetailViewController: UIViewController {
             if let selectedIndexPath = tableView.indexPathForSelectedRow {
                 tableView.deselectRow(at: selectedIndexPath, animated: true)
             }
-        case "ShowReivew" :
+        case "ShowReview" :
             let destination = segue.destination as! ReviewTableViewController
             destination.spot = spot
             let selectedIndexPath = tableView.indexPathForSelectedRow!
             destination.review = reviews.reviewArray[selectedIndexPath.row]
         default:
-            print("***ERROR")
+            print("*** ERROR: Did not have a segue in SpotDetailViewController prepare(for segue:)")
         }
+    }
+    
+    func disableTextEditing() {
+        nameField.backgroundColor = UIColor.clear
+        nameField.isEnabled = false
+        nameField.noBorder()
+        addressField.backgroundColor = UIColor.clear
+        addressField.isEnabled = false
+        addressField.noBorder()
+    }
+    
+    func saveCancelAlert(title: String, message: String, segueIdentifier: String) {
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let saveAction = UIAlertAction(title: "Save", style: .default) { (_) in
+            self.spot.saveData { success in
+                self.saveButton.title = "Done"
+                self.cancelButton.title = ""
+                self.navigationController?.setToolbarHidden(true, animated: true)
+                self.disableTextEditing()
+                if segueIdentifier == "AddReview" {
+                    self.performSegue(withIdentifier: segueIdentifier, sender: nil)
+                } else {
+                    self.cameraOrLibraryAlert()
+                }
+            }
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        alertController.addAction(saveAction)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true, completion: nil)
     }
     
     func showAlert(title: String, message: String) {
@@ -133,7 +174,7 @@ class SpotDetailViewController: UIViewController {
         let cameraAction = UIAlertAction(title: "Camera", style: .default) { _ in
             self.accessCamera()
         }
-        let photoLibraryAction = UIAlertAction(title: "Photo", style: .default) { _ in
+        let photoLibraryAction = UIAlertAction(title: "Photo Library", style: .default) { _ in
             self.accessLibrary()
         }
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
@@ -154,22 +195,31 @@ class SpotDetailViewController: UIViewController {
         updateUserInterface()
     }
     
+    
     @IBAction func photoButtonPressed(_ sender: UIButton) {
-        cameraOrLibraryAlert()
+        if spot.documentID == "" {
+            saveCancelAlert(title: "This Venue Has Not Been Saved", message: "You must save theis venue before you can add a photo.", segueIdentifier: "AddPhoto")
+        } else {
+            cameraOrLibraryAlert()
+        }
     }
     
     @IBAction func reviewButtonPressed(_ sender: UIButton) {
-        performSegue(withIdentifier: "AddReview", sender: nil)
+        if spot.documentID == "" {
+            saveCancelAlert(title: "This Venue Has Not Been Saved", message: "You must save theis venue before you can review it.", segueIdentifier: "AddReview")
+        } else {
+            performSegue(withIdentifier: "AddReview", sender: nil)
+        }
     }
     
     @IBAction func saveButtonPressed(_ sender: UIBarButtonItem) {
         spot.name = nameField.text!
         spot.address = addressField.text!
-        spot.saveData{ success in
+        spot.saveData { success in
             if success {
                 self.leaveViewController()
             } else {
-                print("*** ERROR: couldn't leave this view controller because data wasn't saved.")
+                print("*** ERROR: Couldn't leave this view controller because data wasn't saved.")
             }
         }
     }
@@ -185,7 +235,8 @@ class SpotDetailViewController: UIViewController {
     }
 }
 
-extension SpotDetailViewController : GMSAutocompleteViewControllerDelegate {
+
+extension SpotDetailViewController: GMSAutocompleteViewControllerDelegate {
     
     // Handle the user's selection.
     func viewController(_ viewController: GMSAutocompleteViewController, didAutocompleteWith place: GMSPlace) {
@@ -214,7 +265,6 @@ extension SpotDetailViewController : GMSAutocompleteViewControllerDelegate {
     func didUpdateAutocompletePredictions(_ viewController: GMSAutocompleteViewController) {
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
     }
-    
 }
 
 extension SpotDetailViewController: CLLocationManagerDelegate{
@@ -274,7 +324,7 @@ extension SpotDetailViewController: CLLocationManagerDelegate{
 }
 
 
-extension SpotDetailViewController: UITableViewDelegate,UITableViewDataSource {
+extension SpotDetailViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return reviews.reviewArray.count
     }
@@ -283,7 +333,6 @@ extension SpotDetailViewController: UITableViewDelegate,UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ReviewCell", for: indexPath) as! SpotReviewsTableViewCell
         cell.review = reviews.reviewArray[indexPath.row]
         return cell
-        
     }
 }
 
@@ -297,17 +346,16 @@ extension SpotDetailViewController: UICollectionViewDelegate, UICollectionViewDa
         cell.photo = photos.photoArray[indexPath.row]
         return cell
     }
-    
-    
 }
 
 extension SpotDetailViewController: UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+    
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         let photo = Photo()
         photo.image = info[UIImagePickerController.InfoKey.originalImage] as! UIImage
-        photos.photoArray.append(photo)
         dismiss(animated: true) {
-            self.collectionView.reloadData()
+            photo.saveData(spot: self.spot) { (success) in
+            }
         }
     }
     
@@ -325,8 +373,7 @@ extension SpotDetailViewController: UINavigationControllerDelegate, UIImagePicke
             imagePicker.sourceType = .camera
             present(imagePicker, animated: true, completion: nil)
         } else {
-            showAlert(title: "Camera Not Available", message: "There is no camera available on this device")
+            showAlert(title: "Camera Not Available", message: "There is no camera available on this device.")
         }
     }
 }
-

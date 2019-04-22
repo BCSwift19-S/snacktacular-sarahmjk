@@ -16,6 +16,7 @@ class SpotsListViewController: UIViewController {
     
     @IBOutlet weak var sortSegmentedControl: UISegmentedControl!
     @IBOutlet weak var tableView: UITableView!
+    
     var spots: Spots!
     var authUI: FUIAuth!
     var locationManager: CLLocationManager!
@@ -35,7 +36,7 @@ class SpotsListViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         getLocation()
-        navigationController?.setToolbarHidden(false, animated: true)
+        navigationController?.setToolbarHidden(false, animated: false)
         spots.loadData {
             self.sortBasedOnSegmentPressed()
             self.tableView.reloadData()
@@ -81,11 +82,11 @@ class SpotsListViewController: UIViewController {
         case 0: // A-Z
             spots.spotArray.sort(by: {$0.name < $1.name})
         case 1: // Closest
-            spots.spotArray.sort(by: {$0.location.distance(from: currentLocation) < $1.location.distance(from: currentLocation)})
+            spots.spotArray.sort(by: {$0.location.distance(from: currentLocation) < $1.location.distance(from:currentLocation)} )
         case 2: // Avg. Rating
-            print("TODO")
+            spots.spotArray.sort(by: {$0.averageRating > $1.averageRating})
         default:
-            print("ERROR: segment control")
+            print("*** ERROR: Hey, you should have gotten here, our segmented control should just have 3 segments")
         }
         tableView.reloadData()
     }
@@ -97,13 +98,13 @@ class SpotsListViewController: UIViewController {
     
     @IBAction func signOutPressed(_ sender: UIBarButtonItem) {
         do {
-            try authUI.signOut()
-            print("^^^ successfully signed out!")
+            try authUI!.signOut()
+            print("^^^ Successfully signed out!")
             tableView.isHidden = true
             signIn()
         } catch {
             tableView.isHidden = true
-            print("*** ERROR: couldn't sign out")
+            print("*** ERROR: Couldn't sign out")
         }
     }
     
@@ -119,7 +120,7 @@ extension SpotsListViewController: UITableViewDelegate, UITableViewDataSource {
         if let currentLocation = currentLocation {
             cell.currentLocation = currentLocation
         }
-        cell.configureCell(spot: spots.spotArray[indexPath.row])
+        cell.spot = spots.spotArray[indexPath.row]
         return cell
     }
     
@@ -127,6 +128,7 @@ extension SpotsListViewController: UITableViewDelegate, UITableViewDataSource {
         return 60
     }
 }
+
 
 extension SpotsListViewController: FUIAuthDelegate {
     func application(_ app: UIApplication, open url: URL,
@@ -142,25 +144,31 @@ extension SpotsListViewController: FUIAuthDelegate {
     func authUI(_ authUI: FUIAuth, didSignInWith user: User?, error: Error?) {
         if let user = user {
             tableView.isHidden = false
-            print("*** We signed in with the user \(user.email ?? "unknown email")")
+            print("*** We signed in with the user \(user.email ?? "unknown e-mail")")
         }
     }
     
     func authPickerViewController(forAuthUI authUI: FUIAuth) -> FUIAuthPickerViewController {
-        let logInViewController = FUIAuthPickerViewController(authUI: authUI)
-        logInViewController.view.backgroundColor = UIColor.white
         
-        let marginInsets: CGFloat = 16
-        let imageHeight: CGFloat = 225
-        let imageY = self.view.center.y - imageHeight
+        // Create an instance of the FirebaseAuth login view controller
+        let loginViewController = FUIAuthPickerViewController(authUI: authUI)
+        
+        // Set background color to white
+        loginViewController.view.backgroundColor = UIColor.white
+        
+        // Create a frame for a UIImageView to hold our logo
+        let marginInsets: CGFloat = 16 // logo will be 16 points from L and R margins
+        let imageHeight: CGFloat = 225 // the height of our logo
+        let imageY = self.view.center.y - imageHeight // places bottom of UIImageView in the center of the login screen
         let logoFrame = CGRect(x: self.view.frame.origin.x + marginInsets, y: imageY, width: self.view.frame.width - (marginInsets*2), height: imageHeight)
+        
+        // Create the UIImageView using the frame created above & add the "logo" image
         let logoImageView = UIImageView(frame: logoFrame)
         logoImageView.image = UIImage(named: "logo")
-        logoImageView.contentMode = .scaleAspectFit
-        logInViewController.view.addSubview(logoImageView)
-        return logInViewController
+        logoImageView.contentMode = .scaleAspectFit // Set imageView to Aspect Fit
+        loginViewController.view.addSubview(logoImageView) // Add ImageView to the login controller's main view
+        return loginViewController
     }
-    
 }
 
 extension SpotsListViewController: CLLocationManagerDelegate{
@@ -193,6 +201,6 @@ extension SpotsListViewController: CLLocationManagerDelegate{
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Fail to get user location.")
+        print("Failed to get user location.")
     }
 }

@@ -25,7 +25,7 @@
 		2CD804962267D81700641652 /* ReviewTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CD804952267D81700641652 /* ReviewTableViewController.swift */; };
 		2CD804982267D83400641652 /* Double+roundTo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CD804972267D83400641652 /* Double+roundTo.swift */; };
 		2CD8049A2267D84C00641652 /* UIView+addBorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CD804992267D84C00641652 /* UIView+addBorder.swift */; };
-		2CD8049D2267D8E100641652 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2CD8049B2267D8E100641652 /* Main.storyboard */; };
+		2CD804A1226E682900641652 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2CD8049F226E682900641652 /* Main.storyboard */; };
 		7ECCEE94C4A55D348EE69991 /* Pods_Snacktacular.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7368D4829D256F3F1A9B62A /* Pods_Snacktacular.framework */; };
 /* End PBXBuildFile section */
 
@@ -50,7 +50,7 @@
 		2CD804952267D81700641652 /* ReviewTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewTableViewController.swift; sourceTree = "<group>"; };
 		2CD804972267D83400641652 /* Double+roundTo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+roundTo.swift"; sourceTree = "<group>"; };
 		2CD804992267D84C00641652 /* UIView+addBorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+addBorder.swift"; sourceTree = "<group>"; };
-		2CD8049C2267D8E100641652 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = "Base.lproj/Main copy.storyboard"; sourceTree = "<group>"; };
+		2CD804A0226E682900641652 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		555FF9CCB927DDFFB45F8877 /* Pods-Snacktacular.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Snacktacular.debug.xcconfig"; path = "Target Support Files/Pods-Snacktacular/Pods-Snacktacular.debug.xcconfig"; sourceTree = "<group>"; };
 		B5DEF10D365D60533A15D844 /* Pods-Snacktacular.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Snacktacular.release.xcconfig"; path = "Target Support Files/Pods-Snacktacular/Pods-Snacktacular.release.xcconfig"; sourceTree = "<group>"; };
 		C7368D4829D256F3F1A9B62A /* Pods_Snacktacular.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Snacktacular.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,7 +106,7 @@
 				2CD804952267D81700641652 /* ReviewTableViewController.swift */,
 				2CD804972267D83400641652 /* Double+roundTo.swift */,
 				2CD804992267D84C00641652 /* UIView+addBorder.swift */,
-				2CD8049B2267D8E100641652 /* Main.storyboard */,
+				2CD8049F226E682900641652 /* Main.storyboard */,
 				2CD804762267D52A00641652 /* LaunchScreen.storyboard */,
 				2CD804792267D52A00641652 /* Info.plist */,
 			);
@@ -193,7 +193,7 @@
 			files = (
 				2CD804782267D52A00641652 /* LaunchScreen.storyboard in Resources */,
 				2CD804752267D52A00641652 /* Assets.xcassets in Resources */,
-				2CD8049D2267D8E100641652 /* Main.storyboard in Resources */,
+				2CD804A1226E682900641652 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -353,10 +353,10 @@
 			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
 		};
-		2CD8049B2267D8E100641652 /* Main.storyboard */ = {
+		2CD8049F226E682900641652 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
-				2CD8049C2267D8E100641652 /* Base */,
+				2CD804A0226E682900641652 /* Base */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
